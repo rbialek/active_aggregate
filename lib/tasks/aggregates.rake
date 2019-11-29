@@ -1,13 +1,10 @@
 namespace :aggregates do
 
   task :clean => :environment do
-    namespace = "obx:#{Rails.env}"
-    puts "Flushing Redis:\t #{namespace}"
-    Redis.new(namespace: namespace).flushdb
     # set share counter to reply all events
     ActiveAggregate::EventHandler.set_handler_last_id(-1)
 
-    classes = ActiveAggregate::ActiveAggregate.descendants.select do |k|
+    classes = ActiveAggregate::Base.descendants.select do |k|
       !k.abstract_class?
     end
     classes << ActiveAggregate::EventApplication

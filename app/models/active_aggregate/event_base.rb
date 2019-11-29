@@ -27,6 +27,10 @@ module ActiveAggregate
 
     has_many :event_applications, foreign_key: 'event_id', class_name: 'ActiveAggregate::EventApplication'
 
+    def self.save_and_apply(opts)
+      new(opts).save_and_apply
+    end
+
     def self.domains(*domains)
       domains.present? ? where(domain: domains) : all
     end
