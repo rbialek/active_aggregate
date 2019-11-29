@@ -183,7 +183,7 @@ class Sale < AggregateBase
     ['sales', 'tx'] # listen to both sales events and tx events
   end
 
-  handle OfferEvent do |evemt|
+  handle OfferEvent do |event|
     self.state   = 'new'
     self.seller  = event.seller
     self.name    = event.name
