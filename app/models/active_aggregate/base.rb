@@ -10,15 +10,9 @@ module ActiveAggregate
 
     include EventHandlerUtils
     include LastEventConcern
+    include HandlerConcern
 
     cattr_accessor :listen_to_domains, :last_event_ids
-    after_initialize :added_to_handlers?
-
-    def added_to_handlers?
-      unless EventSubscriber.instance.included_in_handlers?(self.class)
-        raise("#{self.class.name} is not included in ActiveAggregate.all_handler_names!")
-      end
-    end
 
     def self.all_handler_names
       raise("Overwrite in subclass")
@@ -27,12 +21,13 @@ module ActiveAggregate
     # Called at boot time
     def self.load_all_children
       subscriber = EventSubscriber.instance
-      puts "Loading ActiveAggregates: #{all_handler_names.join(',')}"
+      puts "Loading ActiveAggregate handlers: #{all_handler_names.join(',')}"
       all_handler_names.each do |name|
         k = name.constantize
         subscriber.add_handler(k)
       end
     end
+
 
     # apply all created events before returning self
     def self.current
@@ -43,14 +38,6 @@ module ActiveAggregate
     # default active aggregate primary key
     def self.uuid_key
       :uuid
-    end
-
-    # add handler based on the event class name
-    # handle Event::EventName will create method:
-    # def handle_Event_EventName(evt) ... end
-    def self.handle(klass, &code)
-      name = handler_name("handle", klass)
-      define_method(name, &code) # handle_name method
     end
 
     def to_param
@@ -70,13 +57,6 @@ module ActiveAggregate
       where(uuid_key => id).first
     end
 
-    # what domains a handler listens to
-    # the first domain should be the default of the aggregate domain
-    # can be overwritten in handlers example: ['tx','sales']
-    def self.listen_to_domains
-      raise("#{self.name} should define all event domains that this event handler listens to")
-    end
-
     def info(extended = false)
       str = "#{self.name} applied last_event_id: #{get_last_event_id} no_aggregates: #{count}"
       # str += " [ #{aggregate_keys.join(',')} ]" if extended
@@ -87,6 +67,8 @@ module ActiveAggregate
     attr_writer :saving_from_event_handler
 
     def save(*args, &block)
+      raise Exceptions::Exception("persistence? returned false for #{self.class.name}") unless persistent_aggregate?
+
       if @saving_from_event_handler
         @saving_from_event_handler = false
         super

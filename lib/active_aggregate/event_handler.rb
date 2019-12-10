@@ -78,7 +78,7 @@ module ActiveAggregate
       if aggr
         # if an evt was applied then record the change in the db
         # toSave.add([aggr, evt])
-        save_aggregate(aggr, evt) if doSave
+        save_aggregate(aggr, evt) if doSave && handler.persistent_aggregate?
       end
     end
 
