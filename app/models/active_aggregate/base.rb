@@ -67,7 +67,7 @@ module ActiveAggregate
     attr_writer :saving_from_event_handler
 
     def save(*args, &block)
-      raise Exceptions::Exception("persistence? returned false for #{self.class.name}") unless persistent_aggregate?
+      raise Exceptions::Exception("persistence? returned false for #{self.class.name}") unless self.class.persistent_aggregate?
 
       if @saving_from_event_handler
         @saving_from_event_handler = false
